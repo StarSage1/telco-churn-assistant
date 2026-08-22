@@ -148,7 +148,7 @@ The following evidence was produced by the running local application, using the 
 
 The screenshot below is the primary UI evidence for the assessment submission. It demonstrates the complete workflow in one frame: a natural-language customer description, follow-up questions for missing details, 19/19 profile readiness, the final 75.9% high-risk score, the 31% intervention threshold, profile-based marketing signals, the recommended retention action, and the professional-report download control.
 
-This screenshot is a separate live customer example from the reproducible 85.0% report demonstration below; the values are intentionally documented as two different runs.
+This screenshot is a separate live customer example from the reproducible .0% report demonstration below; the values are intentionally documented as two different runs.
 
 ![Completed ChurnSignal conversational assessment](imgs/ui/single-customer-assessment-complete.png)
 
@@ -160,7 +160,7 @@ The successful demonstration used one natural-language prompt containing all 19 
 |---|---:|
 | Completed fields | 19 / 19 |
 | Predicted class | Churn |
-| Churn probability | 85.0% |
+| Churn probability | 76.0% |
 | Action threshold | 31.0% |
 | Risk level | High |
 | Recommended timing | Contact within 48 hours |
