@@ -1,0 +1,33 @@
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Model-training scratch output
+catboost_info/
+**/catboost_info/
+
+# Frontend dependencies and build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+frontend/.vinext/
+frontend/.wrangler/
+
+# Local generation and bulk-processing artifacts
+tmp/
+outputs/
+
+# Local environment, editor, and operating-system files
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

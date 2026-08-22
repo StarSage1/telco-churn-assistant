@@ -1,0 +1,7 @@
+{
+    "logistic_weight": 0.3,
+    "catboost_weight": 0.7,
+    "threshold": 0.31,
+    "positive_class": 1,
+    "negative_class": 0
+}

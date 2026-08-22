@@ -1,0 +1,39 @@
+flowchart LR
+    subgraph client["Marketing Team"]
+        webUi["ChurnSignal Web UI"]
+    end
+
+    subgraph gateway["Local API Layer"]
+        fastApi["FastAPI Application"]
+    end
+
+    subgraph service["Application Services"]
+        chatFlow["Conversation Orchestrator"]
+        validation["Pydantic Validation"]
+        inference["Hybrid Inference Service"]
+        bulkFlow["CSV and Excel Batch Service"]
+        resultFlow["Business Result Builder"]
+    end
+
+    subgraph datastore["Local Artifacts and State"]
+        sessionState["In-memory Session State"]
+        savedModels["Saved Models and JSON Config"]
+        outputFiles["Excel and PDF Outputs"]
+    end
+
+    subgraph external["Local Open-source AI"]
+        ollama["Ollama with Qwen3 1.7B"]
+    end
+
+    webUi -->|"Chat, predict, upload"| fastApi
+    fastApi -->|"Routes chat"| chatFlow
+    fastApi -->|"Routes batch"| bulkFlow
+    chatFlow -->|"Reads and updates"| sessionState
+    chatFlow -.->|"Ollama: structured extraction"| ollama
+    chatFlow -->|"Candidate profile"| validation
+    bulkFlow -->|"Validated rows"| validation
+    validation -->|"Complete 19 fields"| inference
+    inference -->|"Loads models and threshold"| savedModels
+    inference -->|"Probability and class"| resultFlow
+    resultFlow -->|"Builds batch package"| outputFiles
+

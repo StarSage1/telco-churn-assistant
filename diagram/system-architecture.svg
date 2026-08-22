@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" role="img" aria-labelledby="title desc">
+  <title id="title">ChurnSignal local system architecture</title>
+  <desc id="desc">Architecture and data flow from the marketing user through the web interface, FastAPI, local Ollama extraction, validation, ensemble inference, and result delivery.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8fbfb"/><stop offset="1" stop-color="#edf5f4"/></linearGradient>
+    <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#102a43"/><stop offset="1" stop-color="#173f50"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#102a43" flood-opacity="0.12"/></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#147d92"/></marker>
+    <marker id="arrowDark" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#102a43"/></marker>
+    <style>
+      .title{font:700 42px Arial,sans-serif;fill:#102a43}.subtitle{font:400 18px Arial,sans-serif;fill:#526d82}
+      .lane{font:700 14px Arial,sans-serif;letter-spacing:1.8px;fill:#147d92}.box-title{font:700 19px Arial,sans-serif;fill:#102a43}
+      .box-copy{font:400 14px Arial,sans-serif;fill:#526d82}.white-title{font:700 19px Arial,sans-serif;fill:white}.white-copy{font:400 14px Arial,sans-serif;fill:#c9e1e4}
+      .edge{fill:none;stroke:#147d92;stroke-width:3;marker-end:url(#arrow)}.edge-dark{fill:none;stroke:#102a43;stroke-width:3;marker-end:url(#arrowDark)}
+      .edge-dash{fill:none;stroke:#147d92;stroke-width:3;stroke-dasharray:9 7;marker-end:url(#arrow)}.edge-label{font:700 12px Arial,sans-serif;fill:#147d92}
+      .num{font:700 12px Arial,sans-serif;fill:white}.small{font:400 12px Arial,sans-serif;fill:#627d98}
+    </style>
+  </defs>
+  <rect width="1600" height="980" rx="28" fill="url(#bg)"/>
+  <text x="70" y="72" class="title">ChurnSignal - local churn decision architecture</text>
+  <text x="70" y="108" class="subtitle">Natural-language collection, validated tabular inference, and business-ready results without third-party LLM APIs</text>
+
+  <text x="70" y="166" class="lane">INTERACTION</text>
+  <text x="70" y="492" class="lane">MODEL DECISION</text>
+  <text x="70" y="760" class="lane">BULK ASSESSMENT</text>
+
+  <g filter="url(#shadow)"><rect x="70" y="200" width="215" height="142" rx="18" fill="white" stroke="#cbd9df"/></g>
+  <circle cx="105" cy="235" r="17" fill="#2cb1bc"/><text x="101" y="240" class="num">1</text>
+  <text x="135" y="240" class="box-title">Marketing user</text><text x="95" y="276" class="box-copy">Describes one customer</text><text x="95" y="299" class="box-copy">or uploads CSV / Excel</text>
+
+  <g filter="url(#shadow)"><rect x="340" y="200" width="230" height="142" rx="18" fill="white" stroke="#cbd9df"/></g>
+  <circle cx="375" cy="235" r="17" fill="#2cb1bc"/><text x="371" y="240" class="num">2</text>
+  <text x="405" y="240" class="box-title">React frontend</text><text x="365" y="276" class="box-copy">Chat and profile readiness</text><text x="365" y="299" class="box-copy">Results, reports, and uploads</text>
+
+  <g filter="url(#shadow)"><rect x="625" y="200" width="230" height="142" rx="18" fill="url(#navy)"/></g>
+  <circle cx="660" cy="235" r="17" fill="#2cb1bc"/><text x="656" y="240" class="num">3</text>
+  <text x="690" y="240" class="white-title">FastAPI</text><text x="650" y="276" class="white-copy">/chat and /predict</text><text x="650" y="299" class="white-copy">/bulk-predict and /report</text>
+
+  <g filter="url(#shadow)"><rect x="910" y="184" width="260" height="174" rx="18" fill="white" stroke="#85cfc6" stroke-width="2"/></g>
+  <circle cx="945" cy="219" r="17" fill="#2cb1bc"/><text x="941" y="224" class="num">4</text>
+  <text x="975" y="224" class="box-title">Conversation service</text><text x="935" y="260" class="box-copy">Session state and follow-ups</text><text x="935" y="283" class="box-copy">Rule-based typo normalization</text><text x="935" y="306" class="box-copy">Structured patch validation</text><text x="935" y="329" class="box-copy">All 19 fields required</text>
+
+  <g filter="url(#shadow)"><rect x="1225" y="200" width="300" height="142" rx="18" fill="#e8f6f7" stroke="#2cb1bc" stroke-width="2"/></g>
+  <circle cx="1260" cy="235" r="17" fill="#147d92"/><text x="1256" y="240" class="num">5</text>
+  <text x="1290" y="240" class="box-title">Ollama + Qwen3 1.7B</text><text x="1250" y="276" class="box-copy">Local open-source extraction</text><text x="1250" y="299" class="box-copy">Natural language to JSON fields</text>
+
+  <path d="M285 271 H340" class="edge"/><path d="M570 271 H625" class="edge"/><path d="M855 271 H910" class="edge"/>
+  <path d="M1170 271 H1225" class="edge-dash"/><text x="1169" y="250" class="edge-label">LOCAL JSON</text>
+  <path d="M1225 320 C1175 390 995 396 980 358" class="edge-dash"/><text x="1070" y="404" class="edge-label">STRUCTURED PATCH</text>
+
+  <g filter="url(#shadow)"><rect x="340" y="522" width="260" height="158" rx="18" fill="white" stroke="#cbd9df"/></g>
+  <circle cx="375" cy="557" r="17" fill="#2cb1bc"/><text x="371" y="562" class="num">6</text>
+  <text x="405" y="562" class="box-title">Pydantic validation</text><text x="365" y="598" class="box-copy">Enums and numeric constraints</text><text x="365" y="621" class="box-copy">Phone and internet consistency</text><text x="365" y="644" class="box-copy">Ask again when incomplete</text>
+
+  <g filter="url(#shadow)"><rect x="655" y="502" width="400" height="198" rx="20" fill="white" stroke="#85cfc6" stroke-width="2"/></g>
+  <text x="690" y="544" class="box-title">Hybrid inference service</text>
+  <rect x="690" y="570" width="145" height="76" rx="13" fill="#eef3f8" stroke="#b7c8d6"/><text x="711" y="599" class="box-title" font-size="16">Logistic</text><text x="711" y="624" class="box-copy">Raw features - 30%</text>
+  <rect x="870" y="570" width="150" height="76" rx="13" fill="#e8f6f7" stroke="#85cfc6"/><text x="892" y="599" class="box-title" font-size="16">CatBoost</text><text x="892" y="624" class="box-copy">Engineered - 70%</text>
+  <text x="690" y="674" class="box-copy">Weighted probability, then the 0.31 action threshold</text>
+
+  <g filter="url(#shadow)"><rect x="1110" y="522" width="250" height="158" rx="18" fill="url(#navy)"/></g>
+  <circle cx="1145" cy="557" r="17" fill="#2cb1bc"/><text x="1141" y="562" class="num">7</text>
+  <text x="1175" y="562" class="white-title">Business result</text><text x="1135" y="598" class="white-copy">Risk percentage and class</text><text x="1135" y="621" class="white-copy">Profile signals and action</text><text x="1135" y="644" class="white-copy">Customer assessment PDF</text>
+
+  <g filter="url(#shadow)"><rect x="1400" y="522" width="125" height="158" rx="18" fill="white" stroke="#cbd9df"/></g>
+  <text x="1421" y="572" class="box-title">Saved</text><text x="1418" y="601" class="box-copy">2 models</text><text x="1418" y="624" class="box-copy">2 JSON</text><text x="1418" y="647" class="box-copy">configs</text>
+
+  <path d="M1040 358 C1025 458 470 438 470 522" class="edge"/><text x="650" y="445" class="edge-label">COMPLETE PROFILE</text>
+  <path d="M600 601 H655" class="edge"/><path d="M1055 601 H1110" class="edge-dark"/><path d="M1400 601 H1360" class="edge-dark"/>
+  <path d="M1110 660 C980 742 535 735 455 680" class="edge"/><text x="706" y="732" class="edge-label">RESULT RETURNS TO THE UI</text>
+
+  <g filter="url(#shadow)"><rect x="340" y="792" width="260" height="116" rx="18" fill="white" stroke="#cbd9df"/></g>
+  <text x="365" y="830" class="box-title">CSV / Excel parser</text><text x="365" y="860" class="box-copy">Header mapping and row validation</text><text x="365" y="883" class="box-copy">Up to 20,000 customer rows</text>
+  <g filter="url(#shadow)"><rect x="655" y="792" width="260" height="116" rx="18" fill="white" stroke="#cbd9df"/></g>
+  <text x="680" y="830" class="box-title">Vectorized batch score</text><text x="680" y="860" class="box-copy">Same ensemble and threshold</text><text x="680" y="883" class="box-copy">Invalid rows remain visible</text>
+  <g filter="url(#shadow)"><rect x="970" y="792" width="390" height="116" rx="18" fill="#e8f6f7" stroke="#2cb1bc" stroke-width="2"/></g>
+  <text x="995" y="830" class="box-title">Downloadable assessment package</text><text x="995" y="860" class="box-copy">Cloned workbook + Churn + Churn_Percentage</text><text x="995" y="883" class="box-copy">Concise PDF with row-level findings and actions</text>
+  <path d="M600 850 H655" class="edge"/><path d="M915 850 H970" class="edge"/>
+
+  <text x="70" y="952" class="small">All inference and LLM processing remain on localhost. The LLM structures input; the classical ensemble makes the churn decision.</text>
+</svg>
