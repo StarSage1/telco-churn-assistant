@@ -140,6 +140,60 @@ The downloaded ZIP contains:
 
 Limits are 15 MB and 20,000 customer rows per upload.
 
+## Verified end-to-end demonstration
+
+The following evidence was produced by the running local application, using the saved ensemble and local Ollama `qwen3:1.7b`. The complete reproducible artifact set is indexed in [`output/demo/README.md`](output/demo/README.md).
+
+### Live conversational interface
+
+The screenshot below is the primary UI evidence for the assessment submission. It demonstrates the complete workflow in one frame: a natural-language customer description, follow-up questions for missing details, 19/19 profile readiness, the final 75.9% high-risk score, the 31% intervention threshold, profile-based marketing signals, the recommended retention action, and the professional-report download control.
+
+This screenshot is a separate live customer example from the reproducible 85.0% report demonstration below; the values are intentionally documented as two different runs.
+
+![Completed ChurnSignal conversational assessment](imgs/ui/single-customer-assessment-complete.png)
+
+### Prompt-based single-customer assessment
+
+The successful demonstration used one natural-language prompt containing all 19 required customer fields. The assistant extracted a complete profile and returned:
+
+| Result | Value |
+|---|---:|
+| Completed fields | 19 / 19 |
+| Predicted class | Churn |
+| Churn probability | 85.0% |
+| Action threshold | 31.0% |
+| Risk level | High |
+| Recommended timing | Contact within 48 hours |
+
+The exact prompt, extracted profile, and response summary are preserved in [`prompt-result.json`](output/demo/single/prompt-result.json). The generated professional report is [`churnsignal-customer-assessment.pdf`](output/demo/single/churnsignal-customer-assessment.pdf).
+
+![Single-customer assessment report](imgs/demo/single-customer-report.png)
+
+### Ten-customer bulk assessment
+
+The bulk demonstration uploaded an Excel workbook containing 10 customer profiles. All rows validated and scored successfully.
+
+| Result | Value |
+|---|---:|
+| Uploaded rows | 10 |
+| Successfully scored | 10 |
+| Invalid rows | 0 |
+| Predicted churn | 3 |
+| Portfolio churn rate | 30.0% |
+
+The returned package is preserved as [`churnsignal-assessment-package.zip`](output/demo/bulk/churnsignal-assessment-package.zip). It contains a cloned workbook with `Churn` and `Churn_Percentage` appended and a three-page findings report covering every row.
+
+![Bulk assessment summary](imgs/demo/bulk-findings-summary.png)
+
+![Bulk row-by-row findings](imgs/demo/bulk-findings-detail.png)
+
+The individual files are also available directly:
+
+- [Bulk input workbook](output/demo/bulk/input/churnsignal-10-test-customers.xlsx)
+- [Scored output workbook](output/demo/bulk/package/churnsignal-10-test-customers-with-churn.xlsx)
+- [Bulk findings PDF](output/demo/bulk/package/churnsignal-10-test-customers-findings.pdf)
+- [Bulk result summary](output/demo/bulk/summary.json)
+
 ## Run locally
 
 ### Prerequisites
@@ -235,4 +289,3 @@ Serving must load all four artifacts. Saving only the classifiers would lose fea
 ## Additional evidence
 
 All 19 notebook and documentation figures are indexed in [`imgs/README.md`](imgs/README.md). The short submission report is generated as `output/pdf/telco-churn-poc-report.pdf`.
-

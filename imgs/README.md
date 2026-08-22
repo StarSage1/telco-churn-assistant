@@ -24,3 +24,11 @@ All notebook images below were extracted directly from the persisted outputs of 
 | 18 | `fig-18-final-model-comparison.png` | Final OOF model comparison from notebook values |
 | 19 | `fig-19-final-test-confusion-matrix.png` | Final untouched-holdout confusion matrix |
 
+## Application and report evidence
+
+| File | Purpose |
+|---|---|
+| `ui/single-customer-assessment-complete.png` | Live localhost UI with a complete 19/19 conversational assessment, risk score, threshold, signals, action, and report button |
+| `demo/single-customer-report.png` | Rendered preview of the generated single-customer PDF |
+| `demo/bulk-findings-summary.png` | Rendered first-page summary of the 10-customer bulk report |
+| `demo/bulk-findings-detail.png` | Rendered row-by-row findings and recommended actions from the bulk report |

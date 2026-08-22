@@ -1,0 +1,35 @@
+{
+  "session_id": "readme-single-showcase",
+  "prompt": "Assess a female senior citizen who is married and has dependents. She has been a customer for 2 months, has phone service with multiple phone lines, and uses fiber optic internet. She does not have online security or online backup, but she has device protection. She does not have technical support. She uses streaming TV and streaming movies. Her contract is month-to-month, she uses paperless billing, and pays by electronic check. Her monthly charge is 95.70 and her total charges are 191.40.",
+  "status": "complete",
+  "completed_fields": 19,
+  "required_fields": 19,
+  "prediction": {
+    "label": "Churn",
+    "churn_probability": 0.8497,
+    "threshold": 0.31,
+    "risk_level": "High"
+  },
+  "extracted_profile": {
+    "gender": "Female",
+    "Senior_Citizen": 1,
+    "Is_Married": "Yes",
+    "Dependents": "Yes",
+    "tenure": 2,
+    "Phone_Service": "Yes",
+    "Dual": "Yes",
+    "Internet_Service": "Fiber optic",
+    "Online_Security": "No",
+    "Online_Backup": "No",
+    "Device_Protection": "Yes",
+    "Tech_Support": "No",
+    "Streaming_TV": "Yes",
+    "Streaming_Movies": "Yes",
+    "Contract": "Month-to-month",
+    "Paperless_Billing": "Yes",
+    "Payment_Method": "Electronic check",
+    "Monthly_Charges": 95.7,
+    "Total_Charges": 191.4
+  },
+  "recommended_action": "Contact within 48 hours. Offer a one-year loyalty plan or contract incentive, then an automatic-payment incentive, then test a security and technical-support bundle."
+}
