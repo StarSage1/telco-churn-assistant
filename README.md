@@ -97,8 +97,6 @@ The complete Python environment is pinned in `requirements.txt`; direct frontend
 | Frontend QA | ESLint 9.39.4, Node test runner | Static checks and rendered-content smoke tests |
 | Architecture | Mermaid with PNG/SVG exports | Editable architecture source and portable documentation assets |
 
-FastAPI/Uvicorn is sufficient for two compact CPU-friendly models. The application does not require Triton, Ray Serve, Docker/Kubernetes, MLflow, a feature store, RAG, or a database to meet the PoC brief. Those become relevant only when concurrency, durable history, deployment repeatability, model governance, retrieval, or monitoring is required.
-
 ## Architecture
 
 ![ChurnSignal system architecture](diagram/system-architecture.png)
