@@ -56,7 +56,7 @@ const initialMessages = (): Message[] => [{
 }];
 
 export default function Home() {
-  const [sessionId, setSessionId] = useState("");
+  const [sessionId, setSessionId] = useState(makeSessionId);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -72,7 +72,6 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setSessionId(makeSessionId());
     fetch(`${API_URL}/health`)
       .then((response) => response.ok ? response.json() : Promise.reject())
       .then((data) => setModelStatus(data.ollama?.status === "ok" ? "ready" : "unavailable"))

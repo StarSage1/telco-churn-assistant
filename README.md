@@ -236,7 +236,7 @@ Open `http://127.0.0.1:3000`.
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Current verified result: **19 passed**.
+Current verified result: **23 passed**.
 
 ## API surface
 

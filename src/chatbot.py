@@ -250,6 +250,17 @@ def _last_polarity(prefix: str) -> bool:
     return last_positive >= last_negative
 
 
+def _direct_binary_answer(text: str, match: re.Match[str]) -> bool | None:
+    """Read an explicit Yes/No placed immediately after a field label."""
+    suffix = text[match.end() : match.end() + 32]
+    answer = re.match(
+        r"^\s*(?:(?:is|are)\s+|[:=\-]\s*)*"
+        r"(yes|no|true|false|y|n|yeah|yep|yup|nope|nah|yrd|yse|yees)\b",
+        suffix,
+    )
+    return None if answer is None else _yes_no(answer.group(1))
+
+
 def extract_explicit_values(message: str, requested_fields: list[str]) -> dict[str, Any]:
     """Recover high-confidence values and common typo variants without guessing."""
     text = _clean_text(message)
@@ -260,23 +271,39 @@ def extract_explicit_values(message: str, requested_fields: list[str]) -> dict[s
     elif re.search(r"(?<!fe)\bmale\b|\bman\b", text):
         values["gender"] = "Male"
 
-    if re.search(r"\b(?:not|isn't|isnt)\s+(?:a\s+)?senior\b", text):
+    senior_match = re.search(r"\bsenior(?:\s+citizen)?\b", text)
+    senior_answer = _direct_binary_answer(text, senior_match) if senior_match else None
+    if senior_answer is not None:
+        values["Senior_Citizen"] = int(senior_answer)
+    elif re.search(r"\b(?:not|isn't|isnt)\s+(?:a\s+)?senior\b", text):
         values["Senior_Citizen"] = 0
     elif "senior" in text:
         values["Senior_Citizen"] = 1
 
-    if re.search(r"\bunmarried\b|\bsingle\b|\bnot married\b", text):
+    married_match = re.search(r"\bmarried\b", text)
+    married_answer = (
+        _direct_binary_answer(text, married_match) if married_match else None
+    )
+    if married_answer is not None:
+        values["Is_Married"] = "Yes" if married_answer else "No"
+    elif re.search(r"\bunmarried\b|\bsingle\b|\bnot married\b", text):
         values["Is_Married"] = "No"
     elif re.search(r"\bmarried\b", text):
         values["Is_Married"] = "Yes"
 
-    if re.search(r"\b(?:no|without|doesn't have|doesnt have)\s+dependents?\b", text):
+    dependents_match = re.search(r"\bdependents?\b", text)
+    dependents_answer = (
+        _direct_binary_answer(text, dependents_match) if dependents_match else None
+    )
+    if dependents_answer is not None:
+        values["Dependents"] = "Yes" if dependents_answer else "No"
+    elif re.search(r"\b(?:no|without|doesn't have|doesnt have)\s+dependents?\b", text):
         values["Dependents"] = "No"
     elif re.search(r"\b(?:has|have|with)\s+dependents?\b", text):
         values["Dependents"] = "Yes"
 
     tenure_match = re.search(
-        r"\btenu\w*\s*(?:of|is|=)?\s*(\d+(?:\.\d+)?)\s*(months?|years?)?",
+        r"\btenu\w*\s*(?:of|is|=|:|-)?\s*(\d+(?:\.\d+)?)\s*(months?|years?)?",
         text,
     ) or re.search(r"\b(?:joined|customer for|with us for)\D{0,18}(\d+)\s*(months?|years?)", text)
     if tenure_match:
@@ -284,13 +311,23 @@ def extract_explicit_values(message: str, requested_fields: list[str]) -> dict[s
         unit = tenure_match.group(2) or "month"
         values["tenure"] = round(tenure * 12 if unit.startswith("year") else tenure)
 
-    if re.search(r"\bno\s+(?:home\s+)?phone(?: service)?\b|\bwithout phone", text):
+    phone_match = re.search(r"\bphone service\b", text)
+    phone_answer = _direct_binary_answer(text, phone_match) if phone_match else None
+    if phone_answer is not None:
+        values["Phone_Service"] = "Yes" if phone_answer else "No"
+    elif re.search(r"\bno\s+(?:home\s+)?phone(?: service)?\b|\bwithout phone", text):
         values["Phone_Service"] = "No"
     elif re.search(r"\b(?:has|have|with|uses)\s+(?:a\s+)?phone service\b", text):
         values["Phone_Service"] = "Yes"
 
-    if re.search(r"\b(?:multiple|dual|two|more than one)\s+(?:phone\s+)?lines?\b", text):
-        values["Dual"] = "Yes"
+    dual_match = re.search(
+        r"\b(?:multiple|dual|two|more than one)\s+(?:phone\s+)?lines?\b", text
+    )
+    dual_answer = _direct_binary_answer(text, dual_match) if dual_match else None
+    if dual_answer is not None:
+        values["Dual"] = "Yes" if dual_answer else "No"
+    elif dual_match:
+        values["Dual"] = "Yes" if _last_polarity(text[: dual_match.start()]) else "No"
     elif re.search(r"\b(?:one|single)\s+(?:phone\s+)?line\b", text):
         values["Dual"] = "No"
 
@@ -310,10 +347,19 @@ def extract_explicit_values(message: str, requested_fields: list[str]) -> dict[s
         "Streaming_Movies": ["streaming movies", "stream movies"],
     }
     for field_name, aliases in service_aliases.items():
-        matches = [text.find(alias) for alias in aliases if alias in text]
-        if matches:
-            position = min(index for index in matches if index >= 0)
-            values[field_name] = "Yes" if _last_polarity(text[:position]) else "No"
+        alias_matches = [
+            re.search(rf"\b{re.escape(alias)}\b", text) for alias in aliases
+        ]
+        alias_matches = [match for match in alias_matches if match is not None]
+        if alias_matches:
+            match = min(alias_matches, key=lambda candidate: candidate.start())
+            direct_answer = _direct_binary_answer(text, match)
+            if direct_answer is not None:
+                values[field_name] = "Yes" if direct_answer else "No"
+            else:
+                values[field_name] = (
+                    "Yes" if _last_polarity(text[: match.start()]) else "No"
+                )
 
     if re.search(r"\bmonth\s*[- ]?to\s*[- ]?month\b|\bmonthly contract\b", text):
         values["Contract"] = "Month-to-month"
@@ -322,7 +368,13 @@ def extract_explicit_values(message: str, requested_fields: list[str]) -> dict[s
     elif re.search(r"\bone[- ]year\b|\b1[- ]year\b", text):
         values["Contract"] = "One year"
 
-    if re.search(r"\b(?:no|not|without)\s+paperless\b|\bpaper bill", text):
+    paperless_match = re.search(r"\bpaperless(?: billing)?\b", text)
+    paperless_answer = (
+        _direct_binary_answer(text, paperless_match) if paperless_match else None
+    )
+    if paperless_answer is not None:
+        values["Paperless_Billing"] = "Yes" if paperless_answer else "No"
+    elif re.search(r"\b(?:no|not|without)\s+paperless\b|\bpaper bill", text):
         values["Paperless_Billing"] = "No"
     elif "paperless" in text:
         values["Paperless_Billing"] = "Yes"
@@ -336,11 +388,19 @@ def extract_explicit_values(message: str, requested_fields: list[str]) -> dict[s
     elif "credit card" in text:
         values["Payment_Method"] = "Credit card (automatic)"
 
-    monthly_match = re.search(
+    labeled_monthly_match = re.search(
+        r"\bmonthly\s+charg\w*\s*[:=-]\s*([\d,]+(?:\.\d+)?)",
+        text,
+    )
+    monthly_match = labeled_monthly_match or re.search(
         r"\bmonthly\s+charg\w*\s*(?:of|is|=)?\s*[$£€]?\s*([\d,]+(?:\.\d+)?)",
         text,
     )
-    total_match = re.search(
+    labeled_total_match = re.search(
+        r"\btotal\s+charg\w*\s*[:=-]\s*([\d,]+(?:\.\d+)?)",
+        text,
+    )
+    total_match = labeled_total_match or re.search(
         r"\btotal\s+charg\w*\s*(?:of|is|=)?\s*[$£€]?\s*([\d,]+(?:\.\d+)?)",
         text,
     )
@@ -381,6 +441,13 @@ async def extract_customer_patch(
     requested_fields: list[str],
 ) -> dict[str, Any]:
     explicit_values = extract_explicit_values(message, requested_fields)
+    if len(explicit_values) == len(CustomerInput.model_fields):
+        return explicit_values
+    if explicit_values and re.search(
+        r"\b(?:correct|correction|actually|change|update|instead)\b",
+        _clean_text(message),
+    ):
+        return explicit_values
     if requested_fields and all(name in explicit_values for name in requested_fields):
         return explicit_values
 

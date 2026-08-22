@@ -3,6 +3,7 @@ import asyncio
 from src.chatbot import (
     ChatService,
     _apply_relationship_rules,
+    extract_customer_patch,
     extract_explicit_values,
 )
 
@@ -165,6 +166,65 @@ def test_multi_service_sentence_tracks_negation_and_positive_phrases():
     assert values["Online_Backup"] == "Yes"
     assert values["Device_Protection"] == "Yes"
     assert values["Tech_Support"] == "Yes"
+
+
+def test_labeled_complete_profile_preserves_explicit_yes_no_values():
+    message = (
+        "Gender: Female. Senior citizen: No. Married: Yes. Dependents: No. "
+        "Tenure: 2 months. Phone service: Yes. Multiple phone lines: No. "
+        "Internet service: Fiber optic. Online security: No. Online backup: No. "
+        "Device protection: Yes. Technical support: No. Streaming TV: Yes. "
+        "Streaming movies: Yes. Contract: Month-to-month. Paperless billing: Yes. "
+        "Payment method: Electronic check. Monthly charges: 95.70. "
+        "Total charges: 191.40."
+    )
+
+    values = extract_explicit_values(message, [])
+
+    assert values == {
+        **COMPLETE_CUSTOMER,
+        "Is_Married": "Yes",
+        "tenure": 2,
+        "Device_Protection": "Yes",
+        "Monthly_Charges": 95.7,
+        "Total_Charges": 191.4,
+    }
+
+
+def test_negative_multiple_lines_phrasing_is_not_overridden_by_keyword():
+    assert extract_explicit_values("multiple phone lines: No", [])["Dual"] == "No"
+    assert (
+        extract_explicit_values("has phone service but no multiple lines", [])["Dual"]
+        == "No"
+    )
+
+
+def test_completed_profile_accepts_an_explicit_correction_without_ollama():
+    profile = (
+        "Gender: Female. Senior citizen: No. Married: No. Dependents: No. "
+        "Tenure: 3 months. Phone service: Yes. Multiple phone lines: Yes. "
+        "Internet service: Fiber optic. Online security: No. Online backup: No. "
+        "Device protection: No. Technical support: No. Streaming TV: Yes. "
+        "Streaming movies: Yes. Contract: Month-to-month. Paperless billing: Yes. "
+        "Payment method: Electronic check. Monthly charges: 95. "
+        "Total charges: 285."
+    )
+    service = ChatService(
+        extractor=extract_customer_patch,
+        predictor=lambda customer: PREDICTION,
+    )
+
+    first = asyncio.run(service.process("explicit_correction", profile))
+    corrected = asyncio.run(
+        service.process(
+            "explicit_correction", "Correction: multiple phone lines is No."
+        )
+    )
+
+    assert first.status == "complete"
+    assert first.collected_fields["Dual"] == "Yes"
+    assert corrected.status == "complete"
+    assert corrected.collected_fields["Dual"] == "No"
 
 
 def test_invalid_completed_field_is_requested_again_and_accepts_short_correction():

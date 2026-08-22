@@ -41,6 +41,43 @@ def test_prediction_rejects_logically_conflicting_services():
     assert response.status_code == 422
 
 
+def test_chat_endpoint_preserves_labeled_values_and_accepts_correction():
+    session_id = "api_labeled_profile"
+    profile = (
+        "Gender: Female. Senior citizen: No. Married: Yes. Dependents: No. "
+        "Tenure: 2 months. Phone service: Yes. Multiple phone lines: Yes. "
+        "Internet service: Fiber optic. Online security: No. Online backup: No. "
+        "Device protection: Yes. Technical support: No. Streaming TV: Yes. "
+        "Streaming movies: Yes. Contract: Month-to-month. Paperless billing: Yes. "
+        "Payment method: Electronic check. Monthly charges: 95.70. "
+        "Total charges: 191.40."
+    )
+
+    response = client.post("/chat", json={"session_id": session_id, "message": profile})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "complete"
+    assert body["completed_count"] == 19
+    assert body["collected_fields"]["Senior_Citizen"] == 0
+    assert body["collected_fields"]["Device_Protection"] == "Yes"
+    assert body["collected_fields"]["Streaming_TV"] == "Yes"
+    assert body["collected_fields"]["Streaming_Movies"] == "Yes"
+
+    corrected = client.post(
+        "/chat",
+        json={
+            "session_id": session_id,
+            "message": "Correction: multiple phone lines is No.",
+        },
+    )
+
+    assert corrected.status_code == 200
+    corrected_body = corrected.json()
+    assert corrected_body["status"] == "complete"
+    assert corrected_body["collected_fields"]["Dual"] == "No"
+
+
 def test_professional_customer_report_is_a_readable_pdf():
     response = client.post("/report", json=COMPLETE_CUSTOMER)
 
