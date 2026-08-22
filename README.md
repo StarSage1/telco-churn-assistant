@@ -15,7 +15,89 @@ The solution runs locally. Ollama structures the conversation; it does not repla
 | API | FastAPI endpoints for health, prediction, chat, reset, reports, and bulk scoring |
 | Understandable result | Probability, threshold comparison, risk level, profile signals, and next-best action |
 | Architecture diagram | `diagram/system-architecture.png`, with editable SVG and Mermaid source |
-| Supporting evidence | Notebook figures in `imgs/` and the concise PDF project report in `output/pdf/` |
+| Supporting evidence | Notebook figures in `imgs/`, the concise submission report, and the complete repository guide in `output/pdf/` |
+
+## Technical and business motivation
+
+### Business motivation
+
+The client needs more than a classifier hidden in a notebook. The marketing team needs a usable decision-support workflow: identify customers who deserve attention, rank them by model-estimated risk, understand how the score compares with the intervention threshold, and receive a practical next action.
+
+| Business need or risk | ChurnSignal response | Why it matters |
+|---|---|---|
+| Identify likely churners before they leave | Continuous risk score plus a Churn/No Churn decision | Marketing can rank customers and construct a campaign list |
+| Missing a churner may cost more than an unnecessary contact | Recall-oriented hybrid model and 0.31 OOF threshold | The final holdout catches about 76% of actual churners while precision remains about 54% |
+| Marketing users should not construct model JSON manually | Conversational collection of all 19 model inputs | Reduces technical friction while preserving the trained schema |
+| A probability alone is not actionable | Threshold comparison, risk band, profile signals, recommended action, and PDF | Converts the score into a retention-review input |
+| Customer conversation text should remain local | Open-source Qwen3 1.7B served through Ollama | Avoids transmitting customer text to a hosted third-party LLM |
+| Campaigns contain many customers | CSV/XLSX scoring with a cloned workbook and row-level findings report | Supports portfolio triage and retains invalid-row reasons |
+
+The recommendations are decision-support suggestions, not automated treatment decisions or causal claims. Production must incorporate real customer value, churn loss, contact and offer cost, campaign capacity, consent, and contact-policy constraints.
+
+### Technical motivation
+
+The implementation separates language understanding from statistical prediction. Deterministic rules and the local LLM extract only explicit facts into a constrained schema. Pydantic validates those facts. The frozen Logistic Regression and CatBoost ensemble alone computes churn. This keeps predictions reproducible, testable, and independent of prompt wording.
+
+- **Stratified train/test plus CV/OOF:** the dataset has only 7,043 rows, so 80% is used for development with repeated internal validation while 20% remains an untouched final test. A third static validation partition would reduce the data available for learning.
+- **Leakage-safe preprocessing:** one-hot encoding and scaling are fitted inside each cross-validation fold rather than on the complete dataset.
+- **Visible model comparison:** Logistic Regression, Decision Tree, Random Forest, XGBoost, and CatBoost test linear, bagged-tree, and boosted-tree hypotheses before finalists are selected.
+- **Native CatBoost evaluation:** CatBoost is re-evaluated using its intended categorical handling instead of being judged only after one-hot encoding.
+- **OOF selection:** ensemble weights and the action threshold are chosen from predictions made by fold models that did not train on the scored rows. The final test labels are never used for selection.
+- **Hybrid ensemble:** 30% tuned raw-feature Logistic Regression contributes stable additive structure; 70% feature-engineered CatBoost contributes non-linear categorical interactions. The blend has the strongest final OOF ROC-AUC, PR-AUC, and recall, with F1 close to the best candidate.
+- **Strict serving contract:** saved feature and ensemble configuration files preserve feature order, engineered features, weights, and threshold. Pydantic rejects malformed or logically impossible profiles.
+- **Deterministic-first chatbot:** rules handle common answers, ordered replies, corrections, synonyms, and typos; Ollama handles language that benefits from semantic extraction.
+- **One inference path:** JSON prediction, chat, reports, and bulk files all call the same saved artifacts and inference functions.
+
+Hosted LLMs, LLM-based churn prediction, RAG, vector databases, Kubernetes, feature stores, and automated retraining are deliberately excluded. They add privacy, cost, operational, or governance complexity without improving the required localhost PoC. The detailed repository guide explains when each would become appropriate.
+
+## Alignment with the client's requirements
+
+This matrix maps every specification and deliverable in the client brief directly to implementation evidence.
+
+| Client requirement | How ChurnSignal satisfies it | Evidence | Status |
+|---|---|---|---|
+| Build a classical churn classification model | Compares five model families, tunes finalists, selects a Logistic/CatBoost probability ensemble, and evaluates it once on an untouched holdout | `notebooks/etislat.ipynb`, `models/` | Met |
+| Use the supplied dataset | Audits, cleans, and models the supplied 7,043-row, 21-variable telco dataset | `Data/`, notebook data audit | Met |
+| Explain model choice, feature engineering, and training | Documents the baseline, comparisons, tuning, six engineered features, OOF weighting, threshold selection, and final test | Notebook, README, both PDFs in `output/pdf/` | Met |
+| Gather model inputs through conversation | Stores session state, extracts explicit facts, asks grouped follow-up questions until all 19 fields validate, and supports corrections | `src/chatbot.py`, `src/schemas.py`, tests | Met |
+| Use an open-source model instead of a closed third-party LLM | Runs `qwen3:1.7b` locally through Ollama; no hosted LLM API is required | Ollama configuration and `/health` | Met |
+| Translate marketing language into structured data | Combines deterministic normalization with Pydantic-constrained `CustomerPatch` extraction | `src/chatbot.py`, `tests/test_chatbot.py` | Met |
+| Present understandable results | Returns class, probability, 31% threshold comparison, risk band, profile signals, recommended action, interpretation note, and PDF | Chat response, frontend, demo artifacts | Met |
+| Deploy the solution as an API | Exposes health, predict, chat/reset, report, and bulk endpoints through FastAPI | `src/Api.py`, `/docs`, API tests | Met |
+| Provide an architecture and data-flow diagram | Supplies Mermaid source plus editable SVG and presentation PNG | `diagram/system-architecture.*` | Met |
+| Document technical and business motivations | Connects model, threshold, privacy, validation, and delivery choices to campaign risk and usability | Motivation sections above and both project PDFs | Met |
+| Explain alignment with client requirements | Provides this explicit requirement-to-evidence matrix and the equivalent PDF chapter | This section and both project PDFs | Met |
+| Keep the solution simple while allowing suitable libraries | Uses a local three-process PoC: Ollama, FastAPI, and React; avoids unjustified cloud and MLOps infrastructure | Architecture, tools table, PoC boundaries | Met |
+
+Bulk spreadsheet scoring and professional single/bulk PDF reports are value-added features. They improve marketing usability but are not treated as substitutes for any mandatory deliverable.
+
+## Tools and libraries
+
+The complete Python environment is pinned in `requirements.txt`; direct frontend dependencies and scripts are declared in `frontend/package.json`, and the exact JavaScript graph is locked in `frontend/package-lock.json`.
+
+| Area | Tool or library | Role and reason for selection |
+|---|---|---|
+| Runtime | Python 3.9 | Shared language for analysis, training artifacts, validation, API, bulk processing, and reports |
+| Notebook | JupyterLab / IPython | Preserves the assessment's chronological trial-and-error, figures, outputs, and artifact export |
+| Tabular computing | pandas 2.3.3, NumPy 2.0.2 | Cleaning, feature frames, numerical operations, and vectorized batch preparation |
+| Statistics | SciPy 1.13.1 | Chi-square, Mann-Whitney U, association measures, and non-parametric analysis |
+| Visualization | Matplotlib 3.9.4, Seaborn 0.13.2 | EDA, threshold curves, comparisons, and confusion matrices |
+| Classical ML | scikit-learn 1.6.1 | Splits, leakage-safe pipelines, encoding, scaling, baselines, models, CV, tuning, and metrics |
+| Boosting | CatBoost 1.2.10, XGBoost 2.1.4 | Boosted-family comparison and the selected native categorical model |
+| Serialization | joblib 1.5.3, CatBoost model format, JSON | Saves both fitted models plus feature, weight, and threshold contracts |
+| API | FastAPI 0.128.8, Uvicorn 0.39.0 | Typed lightweight REST service, local ASGI server, and OpenAPI documentation |
+| Validation | Pydantic 2.13.4 | Exact schemas, categories, ranges, dependency rules, and structured LLM output validation |
+| Local LLM | Ollama with Qwen3 1.7B | Small open-source extraction model running locally without hosted-provider data transfer |
+| LLM HTTP | HTTPX 0.28.1 | Asynchronous Ollama calls with configured timeout and error handling |
+| Uploads and Excel | python-multipart 0.0.20, openpyxl 3.1.5 | Multipart CSV/XLSX upload and Excel workbook recreation |
+| PDF | ReportLab 4.4.3, pypdf 6.0.0 | Local deterministic PDF generation and document verification |
+| Backend QA | pytest 8.4.2 | Regression tests for API, validation, chat, corrections, reports, and bulk scoring |
+| Frontend | React 19.2.6, React DOM 19.2.6, TypeScript 5.9.3 | Typed stateful conversation, readiness, results, reports, and bulk UI |
+| Frontend build | vinext 1.0.0-beta.2, Vite 8.0.13 | Local development and production compilation for the selected scaffold |
+| Frontend QA | ESLint 9.39.4, Node test runner | Static checks and rendered-content smoke tests |
+| Architecture | Mermaid with PNG/SVG exports | Editable architecture source and portable documentation assets |
+
+FastAPI/Uvicorn is sufficient for two compact CPU-friendly models. The application does not require Triton, Ray Serve, Docker/Kubernetes, MLflow, a feature store, RAG, or a database to meet the PoC brief. Those become relevant only when concurrency, durable history, deployment repeatability, model governance, retrieval, or monitoring is required.
 
 ## Architecture
 
@@ -41,7 +123,7 @@ The complete source diagram is available as:
 - **Negative class:** 5,174 retained customers, or 73.46%.
 - **Model inputs:** 19 fields after excluding `Customer_ID` and the target.
 
-The imbalance explains why accuracy is not used alone. A model predicting “No Churn” for everyone would be about 73.46% accurate while catching zero churners.
+The imbalance explains why accuracy is not used alone. A model predicting "No Churn" for everyone would be about 73.46% accurate while catching zero churners.
 
 ![Target distribution](imgs/fig-01-target-distribution.png)
 
@@ -121,7 +203,7 @@ The confusion matrix contains 793 true negatives, 242 false positives, 90 false 
 2. Deterministic parsing handles common shorthand, typos, numeric answers, and ordered multi-answer replies.
 3. Ollama returns a structured patch constrained by the Pydantic schema.
 4. Confirmed values are stored for the session.
-5. Relationship rules automatically handle “No phone service” and “No internet service” dependencies.
+5. Relationship rules automatically handle "No phone service" and "No internet service" dependencies.
 6. The assistant asks only for missing, invalid, or conflicting fields.
 7. Prediction starts only when all 19 model inputs validate.
 8. The API returns the model score, class, threshold, business signals, and recommended action.
@@ -148,7 +230,7 @@ The following evidence was produced by the running local application, using the 
 
 The screenshot below is the primary UI evidence for the assessment submission. It demonstrates the complete workflow in one frame: a natural-language customer description, follow-up questions for missing details, 19/19 profile readiness, the final 75.9% high-risk score, the 31% intervention threshold, profile-based marketing signals, the recommended retention action, and the professional-report download control.
 
-This screenshot is a separate live customer example from the reproducible .0% report demonstration below; the values are intentionally documented as two different runs.
+This screenshot is a separate live customer example from the reproducible 76.0% report demonstration below; the values are intentionally documented as two different runs.
 
 ![Completed ChurnSignal conversational assessment](imgs/ui/single-customer-assessment-complete.png)
 
@@ -261,7 +343,7 @@ telco-churn-assistant/
 |-- tests/                 Backend API and chatbot tests
 |-- imgs/                  Notebook figures, result figures, and UI evidence
 |-- diagram/               Architecture PNG, SVG, and Mermaid source
-|-- output/pdf/            Concise project report
+|-- output/pdf/            Concise report and complete repository guide
 |-- requirements.txt       Python environment dependencies
 `-- README.md              Project guide
 ```
@@ -288,4 +370,4 @@ Serving must load all four artifacts. Saving only the classifiers would lose fea
 
 ## Additional evidence
 
-All 19 notebook and documentation figures are indexed in [`imgs/README.md`](imgs/README.md). The short submission report is generated as `output/pdf/telco-churn-poc-report.pdf`.
+All 19 notebook and documentation figures are indexed in [`imgs/README.md`](imgs/README.md). The concise submission report is `output/pdf/telco-churn-poc-report.pdf`; the detailed handover is `output/pdf/churnsignal_complete_repository_guide.pdf`.
